@@ -1,0 +1,158 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}Appointments - Clinic Appointment System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="h3 fw-bold text-dark mb-0">Appointments</h2>
+        <p class="text-muted mb-0 small">Manage clinic bookings, filters, and appointment statuses</p>
+    </div>
+    <a href="{% url 'appointment_book' %}" class="btn btn-primary">
+        <i class="bi bi-calendar-plus me-1"></i> Book New Appointment
+    </a>
+</div>
+
+<!-- Filter Bar: Doctor, Patient, Date -->
+<div class="card main-card bg-white mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-3 align-items-end">
+            <!-- Filter by Doctor -->
+            <div class="col-12 col-md-3">
+                <label for="filterDoctor" class="form-label small fw-semibold text-muted mb-1">
+                    <i class="bi bi-person-badge me-1"></i> Filter by Doctor
+                </label>
+                <select name="doctor" id="filterDoctor" class="form-select form-select-sm">
+                    <option value="">-- All Doctors --</option>
+                    {% for doc in doctors %}
+                        <option value="{{ doc.id }}" {% if selected_doctor == doc.id|stringformat:"s" %}selected{% endif %}>
+                            Dr. {{ doc.name }} ({{ doc.specialization }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Filter by Patient -->
+            <div class="col-12 col-md-3">
+                <label for="filterPatient" class="form-label small fw-semibold text-muted mb-1">
+                    <i class="bi bi-person me-1"></i> Filter by Patient
+                </label>
+                <select name="patient" id="filterPatient" class="form-select form-select-sm">
+                    <option value="">-- All Patients --</option>
+                    {% for pat in patients %}
+                        <option value="{{ pat.id }}" {% if selected_patient == pat.id|stringformat:"s" %}selected{% endif %}>
+                            {{ pat.name }} ({{ pat.phone }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Filter by Date -->
+            <div class="col-12 col-md-3">
+                <label for="filterDate" class="form-label small fw-semibold text-muted mb-1">
+                    <i class="bi bi-calendar me-1"></i> Filter by Date
+                </label>
+                <input type="date" name="date" id="filterDate" class="form-control form-control-sm" value="{{ selected_date }}">
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="col-12 col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                    <i class="bi bi-funnel me-1"></i> Filter
+                </button>
+                {% if selected_doctor or selected_patient or selected_date %}
+                    <a href="{% url 'appointment_list' %}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+                        <i class="bi bi-x-circle me-1"></i> Clear
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Appointments List Table -->
+<div class="card main-card bg-white">
+    <div class="card-body p-0">
+        {% if appointments %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Date & Time</th>
+                            <th>Doctor Name</th>
+                            <th>Patient Name</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appt in appointments %}
+                            <tr>
+                                <td class="text-muted">{{ forloop.counter }}</td>
+                                <td>
+                                    <div class="fw-semibold text-dark">
+                                        <i class="bi bi-calendar-event me-1 text-primary"></i> {{ appt.appointment_date|date:"M d, Y" }}
+                                    </div>
+                                    <div class="small text-muted">
+                                        <i class="bi bi-clock me-1"></i> {{ appt.appointment_time|time:"g:i A" }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">Dr. {{ appt.doctor.name }}</div>
+                                    <div class="small text-muted">
+                                        <i class="bi bi-award me-1"></i> {{ appt.doctor.specialization }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ appt.patient.name }}</div>
+                                    <div class="small text-muted">
+                                        <i class="bi bi-telephone me-1"></i> {{ appt.patient.phone }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-status-{{ appt.status }} px-2 py-1 rounded-pill">
+                                        {{ appt.status }}
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'appointment_update_status' appt.pk %}" class="btn btn-outline-secondary" title="Update Status">
+                                            <i class="bi bi-pencil-square me-1"></i> Status
+                                        </a>
+                                        {% if appt.status != 'Cancelled' %}
+                                            <form method="post" action="{% url 'appointment_cancel' appt.pk %}" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this appointment?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-outline-danger" title="Cancel Appointment">
+                                                    <i class="bi bi-x-circle me-1"></i> Cancel
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-calendar-x text-muted display-4"></i>
+                <h5 class="text-muted mt-3">No Appointments Found</h5>
+                {% if selected_doctor or selected_patient or selected_date %}
+                    <p class="text-muted small">No appointments match the selected filter criteria.</p>
+                    <a href="{% url 'appointment_list' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-x-circle me-1"></i> Reset Filters
+                    </a>
+                {% else %}
+                    <p class="text-muted small">No appointments have been booked yet.</p>
+                    <a href="{% url 'appointment_book' %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-calendar-plus me-1"></i> Book New Appointment
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

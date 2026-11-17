@@ -1,0 +1,107 @@
+{% extends 'clinic/base.html' %}
+
+{% block title %}{{ title }} - Clinic Appointment System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card main-card bg-white">
+            <div class="card-header bg-white border-bottom py-3">
+                <div class="d-flex align-items-center">
+                    <a href="{% url 'appointment_list' %}" class="btn btn-outline-secondary btn-sm me-3" title="Back to Appointments">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                    <h5 class="card-title fw-bold text-dark mb-0">
+                        <i class="bi bi-calendar-check text-primary me-2"></i> {{ title }}
+                    </h5>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                {% if not form.fields.doctor.queryset.exists or not form.fields.patient.queryset.exists %}
+                    <div class="alert alert-warning">
+                        <h6 class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i> Setup Required</h6>
+                        <p class="small mb-2">Before booking an appointment, you must register at least one doctor and one patient.</p>
+                        <div class="d-flex gap-2">
+                            {% if not form.fields.doctor.queryset.exists %}
+                                <a href="{% url 'doctor_create' %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-person-plus me-1"></i> Add Doctor
+                                </a>
+                            {% endif %}
+                            {% if not form.fields.patient.queryset.exists %}
+                                <a href="{% url 'patient_create' %}" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-person-add me-1"></i> Register Patient
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger py-2">
+                            {% for error in form.non_field_errors %}
+                                <p class="mb-0">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Doctor Selection -->
+                    <div class="mb-3">
+                        <label for="{{ form.doctor.id_for_label }}" class="form-label fw-semibold">Select Doctor <span class="text-danger">*</span></label>
+                        {{ form.doctor }}
+                        {% if form.doctor.errors %}
+                            <div class="text-danger small mt-1">{{ form.doctor.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Patient Selection -->
+                    <div class="mb-3">
+                        <label for="{{ form.patient.id_for_label }}" class="form-label fw-semibold">Select Patient <span class="text-danger">*</span></label>
+                        {{ form.patient }}
+                        {% if form.patient.errors %}
+                            <div class="text-danger small mt-1">{{ form.patient.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Date & Time -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label for="{{ form.appointment_date.id_for_label }}" class="form-label fw-semibold">Appointment Date <span class="text-danger">*</span></label>
+                            {{ form.appointment_date }}
+                            {% if form.appointment_date.errors %}
+                                <div class="text-danger small mt-1">{{ form.appointment_date.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-6">
+                            <label for="{{ form.appointment_time.id_for_label }}" class="form-label fw-semibold">Appointment Time <span class="text-danger">*</span></label>
+                            {{ form.appointment_time }}
+                            {% if form.appointment_time.errors %}
+                                <div class="text-danger small mt-1">{{ form.appointment_time.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="mb-4">
+                        <label for="{{ form.status.id_for_label }}" class="form-label fw-semibold">Initial Status</label>
+                        {{ form.status }}
+                        {% if form.status.errors %}
+                            <div class="text-danger small mt-1">{{ form.status.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'appointment_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-calendar-check me-1"></i> Book Appointment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
